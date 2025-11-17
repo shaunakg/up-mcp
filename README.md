@@ -1,32 +1,33 @@
-# MCP Server Template
+# Up Bank MCP Server
 
-A minimal [FastMCP](https://github.com/jlowin/fastmcp) server template for Render deployment with streamable HTTP transport.
+An opinionated [FastMCP](https://github.com/jlowin/fastmcp) server that wraps the entire [Up Bank public API](https://developer.up.com.au/) surface area, including accounts, transactions, attachments, categories, tags, and webhook utilities.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/InteractionCo/mcp-server-template)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/shaunakg/up-mcp)
 
 ## Local Development
 
 ### Setup
 
-Fork the repo, then run:
-
 ```bash
 git clone <your-repo-url>
-cd mcp-server-template
-conda create -n mcp-server python=3.13
-conda activate mcp-server
+cd up-mcp
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
+export UP_API_TOKEN="your-up-personal-access-token"
 ```
+
+> 💡 Generate a Personal Access Token from the Up dashboard. The server refuses to start if `UP_API_TOKEN` is missing.
 
 ### Test
 
 ```bash
 python src/server.py
-# then in another terminal run:
+# in another terminal:
 npx @modelcontextprotocol/inspector
 ```
 
-Open http://localhost:3000 and connect to `http://localhost:8000/mcp` using "Streamable HTTP" transport (NOTE THE `/mcp`!).
+Open http://localhost:3000 and connect to `http://localhost:8000/mcp` using the “Streamable HTTP” transport (make sure to include `/mcp` in the URL).
 
 ## Deployment
 
@@ -50,17 +51,16 @@ If you run into persistent issues of poke not calling the right MCP (e.g. after 
 We're working hard on improving the integration use of Poke :)
 
 
-## Customization
+## Available Tools
 
-Add more tools by decorating functions with `@mcp.tool`:
+The MCP server exposes first-class tools for every Up API resource:
 
-```python
-@mcp.tool
-def calculate(x: float, y: float, operation: str) -> float:
-    """Perform basic arithmetic operations."""
-    if operation == "add":
-        return x + y
-    elif operation == "multiply":
-        return x * y
-    # ...
-```
+- `up_ping` – Up utility ping
+- `list_accounts`, `get_account`
+- `list_transactions`, `get_transaction`, `list_account_transactions`
+- `list_attachments`, `get_attachment`
+- `list_categories`, `get_category`, `categorize_transaction`, `clear_transaction_category`
+- `list_tags`, `add_tags_to_transaction`, `remove_tags_from_transaction`
+- `list_webhooks`, `create_webhook`, `get_webhook`, `delete_webhook`, `ping_webhook`, `list_webhook_logs`
+
+Pagination cursors, filtering, and mutation payloads mirror the official API spec so that tooling can be composed directly from chat instructions.

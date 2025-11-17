@@ -7,18 +7,35 @@ import os
 from typing import List, Optional
 
 from fastmcp import FastMCP
+from fastmcp.server.auth.providers.debug import DebugTokenVerifier
+from fastmcp.server.dependencies import get_access_token
 
 from up_api import UpAPI, UpAPIConfig, UpAPIError
 
 
-mcp = FastMCP("Up Bank MCP Server")
+mcp = FastMCP("Up Bank MCP Server", auth=DebugTokenVerifier())
+
+
+def _resolve_token_from_request() -> Optional[str]:
+    """Try to pull a bearer token from the active FastMCP request."""
+    try:
+        access_token = get_access_token()
+    except RuntimeError:
+        # Occurs if we are outside a request context (e.g., startup)
+        return None
+
+    if access_token and access_token.token:
+        return access_token.token
+
+    return None
 
 
 def _get_client() -> UpAPI:
-    token = os.environ.get("UP_API_TOKEN")
+    token = _resolve_token_from_request() or os.environ.get("UP_API_TOKEN")
     if not token:
         raise RuntimeError(
-            "UP_API_TOKEN environment variable is required to call the Up API."
+            "An Up API token is required. Either include a bearer token in the "
+            "FastMCP request or set the UP_API_TOKEN environment variable."
         )
     return UpAPI(UpAPIConfig(token=token))
 
